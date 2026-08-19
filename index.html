@@ -211,7 +211,7 @@
         .section-kicker { animation: kickerPulse 3s ease-in-out infinite; }
         @keyframes kickerPulse { 0%,100%{opacity:.75} 50%{opacity:1; text-shadow:0 0 18px currentColor;} }
 
-        /* Atom Orbit Animations */
+        /* Atom Orbit Animations - Controlled partially via JS for speed changes */
         .orbit-cw { animation: orbitSpinCw linear infinite; }
         .orbit-ccw { animation: orbitSpinCcw linear infinite; }
         .electron-cw { animation: electronSpinCw linear infinite; }
@@ -867,12 +867,13 @@
                 </div>
                 
                 <!-- Atom Animation Orbit Logic -->
-                <div class="relative w-full min-h-[400px] flex items-center justify-center">
+                <div id="atom-system" class="relative w-full min-h-[400px] flex items-center justify-center group cursor-crosshair transition-all duration-500">
                     
                     <!-- Center Core -->
-                    <div class="absolute w-40 h-40 md:w-52 md:h-52 rounded-full bg-gradient-to-br from-electricBlue/20 to-neonPurple/10 blur-xl animate-pulse"></div>
-                    <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full glass-card !bg-white/[.04] flex items-center justify-center z-10 hover:scale-110 transition-transform duration-1000 shadow-[0_0_60px_rgba(59,130,246,.25)] border border-electricBlue/30">
-                        <i data-lucide="sparkles" class="w-10 h-10 md:w-14 md:h-14 text-white drop-shadow-[0_0_18px_rgba(59,130,246,.8)]"></i>
+                    <div class="absolute w-40 h-40 md:w-52 md:h-52 rounded-full bg-gradient-to-br from-electricBlue/20 to-neonPurple/10 blur-xl animate-pulse group-hover:from-electricBlue/40 group-hover:to-neonPurple/30 transition-all duration-500"></div>
+                    
+                    <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full glass-card !bg-white/[.04] flex items-center justify-center z-10 group-hover:scale-110 group-hover:shadow-[0_0_80px_rgba(59,130,246,.6)] transition-all duration-700 border border-electricBlue/30 group-hover:border-electricBlue/70">
+                        <i data-lucide="sparkles" class="w-10 h-10 md:w-14 md:h-14 text-white drop-shadow-[0_0_18px_rgba(59,130,246,.8)] group-hover:text-blue-100 transition-colors"></i>
                     </div>
 
                     <!-- Orbit 1 (Outer - Motion) -->
@@ -1131,6 +1132,38 @@
                 card.style.transform = '';
             });
         });
+
+        // --- Atom System Speed Up on Hover ---
+        const atomSystem = document.getElementById('atom-system');
+        if (atomSystem) {
+            const animatedEls = atomSystem.querySelectorAll('.orbit-cw, .orbit-ccw, .electron-cw, .electron-ccw');
+            let currentRate = 1;
+            let targetRate = 1;
+            
+            // Spin up to 4.5x speed on hover
+            atomSystem.addEventListener('mouseenter', () => targetRate = 4.5);
+            // Spin down to normal speed when leaving
+            atomSystem.addEventListener('mouseleave', () => targetRate = 1);
+            
+            function updateAtomSpeed() {
+                if (Math.abs(currentRate - targetRate) > 0.01) {
+                    // Smooth easing acceleration / deceleration
+                    currentRate += (targetRate - currentRate) * 0.08; 
+                    
+                    animatedEls.forEach(el => {
+                        // Apply playbackRate dynamically so the animation doesn't "skip"
+                        if(el.getAnimations) {
+                            el.getAnimations().forEach(anim => {
+                                anim.playbackRate = currentRate;
+                            });
+                        }
+                    });
+                }
+                requestAnimationFrame(updateAtomSpeed);
+            }
+            // Start the interpolation loop
+            updateAtomSpeed();
+        }
 
         // --- Custom Trailed Cursor & Optimus Logic ---
         const cursorContainer = document.getElementById('custom-cursor-container');
